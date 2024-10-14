@@ -14,106 +14,104 @@ import androidx.lifecycle.ViewModelProvider
 
 class PrincipalFragment : Fragment() {
 
-    private lateinit var viewModel: CarrerasViewModel
-    private lateinit var imageView: ImageView
-    private lateinit var lblNombre: TextView
-    private lateinit var progressBars: List<ProgressBar>
+    private lateinit var vistaModelo: CarrerasViewModel
+    private lateinit var imagenCarrera: ImageView
+    private lateinit var etiquetaNombre: TextView
+    private lateinit var barrasProgreso: List<ProgressBar>
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        val view = inflater.inflate(R.layout.fragment_principal, container, false)
+        val vista = inflater.inflate(R.layout.fragment_principal, container, false)
 
-        imageView = view.findViewById(R.id.imageView)
-        lblNombre = view.findViewById(R.id.lblNombre)
-        progressBars = listOf(
-            view.findViewById(R.id.progressBar3),
-            view.findViewById(R.id.progressBar4),
-            view.findViewById(R.id.progressBar5)
+        imagenCarrera = vista.findViewById(R.id.imageView)
+        etiquetaNombre = vista.findViewById(R.id.lblNombre)
+        barrasProgreso = listOf(
+            vista.findViewById(R.id.progressBar3),
+            vista.findViewById(R.id.progressBar4),
+            vista.findViewById(R.id.progressBar5)
         )
 
-        viewModel = ViewModelProvider(requireActivity()).get(CarrerasViewModel::class.java)
-        view.findViewById<Button>(R.id.buttonLista).setOnClickListener {
+        vistaModelo = ViewModelProvider(requireActivity()).get(CarrerasViewModel::class.java)
+        vista.findViewById<Button>(R.id.buttonLista).setOnClickListener {
             println("Lista de me gusta:")
-            viewModel.likedCarreras.value?.forEach { likedCarrera ->
-                println("Nombre: ${likedCarrera.nombre}")
-                println("Imagen: ${likedCarrera.imagenes}")
+            vistaModelo.carrerasFavoritas.value?.forEach { carreraFavorita ->
+                println("Nombre: ${carreraFavorita.nombre}")
+                println("Imagen: ${carreraFavorita.imagenes}")
             }
             parentFragmentManager.beginTransaction()
                 .replace(R.id.main, ListaFragment())
                 .addToBackStack(null)
                 .commit()
         }
+
         // Observo cambios en la lista de carreras
-        viewModel.carrerasList.observe(viewLifecycleOwner) { carrerasList ->
+        vistaModelo.listaCarreras.observe(viewLifecycleOwner) { listaCarreras ->
             // Actualizo el nombre y la imagen de la carrera actual
-            val carreraActual = carrerasList[viewModel.currentIndex.value ?: 0]
-            imageView.setImageResource(carreraActual.imagenes[viewModel.currentImageIndex.value ?: 0])
-            lblNombre.text = carreraActual.nombre
-            updateProgressBars()
+            val carreraActual = listaCarreras[vistaModelo.indiceActual.value ?: 0]
+            imagenCarrera.setImageResource(carreraActual.imagenes[vistaModelo.indiceImagenActual.value ?: 0])
+            etiquetaNombre.text = carreraActual.nombre
+            actualizarBarrasProgreso()
         }
 
         // Observo cambios en el índice actual de imagen
-        viewModel.currentImageIndex.observe(viewLifecycleOwner) {
-            updateImage()
+        vistaModelo.indiceImagenActual.observe(viewLifecycleOwner) {
+            actualizarImagen()
         }
 
-        view.findViewById<Button>(R.id.buttonDislike).setOnClickListener {
-            viewModel.nextCarrera()
+        vista.findViewById<Button>(R.id.buttonDislike).setOnClickListener {
+            vistaModelo.siguienteCarrera()
         }
 
-
-        view.findViewById<Button>(R.id.buttonLike).setOnClickListener {
-            viewModel.likeCurrentCarrera()
-            viewModel.nextCarrera()
+        vista.findViewById<Button>(R.id.buttonLike).setOnClickListener {
+            vistaModelo.meGustaCarreraActual()
+            vistaModelo.siguienteCarrera()
         }
 
-
-        imageView.setOnTouchListener { _, event ->
-            handleTouch(event)
+        imagenCarrera.setOnTouchListener { _, event ->
+            manejarToque(event)
             true
         }
 
-        return view
+        return vista
     }
 
-    private fun updateImage() {
-        val carreraActual = viewModel.carrerasList.value?.get(viewModel.currentIndex.value ?: 0)
+    private fun actualizarImagen() {
+        val carreraActual = vistaModelo.listaCarreras.value?.get(vistaModelo.indiceActual.value ?: 0)
         carreraActual?.let {
-            imageView.setImageResource(it.imagenes[viewModel.currentImageIndex.value ?: 0])
-            lblNombre.text = it.nombre
+            imagenCarrera.setImageResource(it.imagenes[vistaModelo.indiceImagenActual.value ?: 0])
+            etiquetaNombre.text = it.nombre
         }
     }
 
-    private fun handleTouch(event: MotionEvent) {
-        val width = imageView.width
+    private fun manejarToque(evento: MotionEvent) {
+        val ancho = imagenCarrera.width
 
-        if (event.action == MotionEvent.ACTION_UP) {
-            if (event.x < width / 2) {
-                viewModel.previousImage()
+        if (evento.action == MotionEvent.ACTION_UP) {
+            if (evento.x < ancho / 2) {
+                vistaModelo.imagenAnterior()
             } else {
-                viewModel.nextImage()
+                vistaModelo.siguienteImagen()
             }
-            updateProgressBars()
+            actualizarBarrasProgreso()
         }
     }
 
-    private fun updateProgressBars() {
-        val currentImageIndex = viewModel.currentImageIndex.value ?: 0
+    private fun actualizarBarrasProgreso() {
+        val indiceImagenActual = vistaModelo.indiceImagenActual.value ?: 0
 
-        for (i in progressBars.indices) {
-            if (i == currentImageIndex) {
-                progressBars[i].progress = 100
-            } else{
-                progressBars[i].progress = 0
+        for (i in barrasProgreso.indices) {
+            if (i == indiceImagenActual) {
+                barrasProgreso[i].progress = 100
+            } else {
+                barrasProgreso[i].progress = 0
             }
         }
     }
 
     companion object {
         @JvmStatic
-        fun newInstance() = PrincipalFragment()
+        fun nuevaInstancia() = PrincipalFragment()
     }
 }
-
